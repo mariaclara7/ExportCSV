@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { StatsCards } from './StatsCards';
 import { ModernDashboard } from './ModernDashboard';
 import { AwardsTable } from './AwardsTable';
 import { DashboardStats, StatusAnalysis, PatientStats } from '@/types';
@@ -14,7 +13,6 @@ interface DashboardProps {
 }
 
 export function Dashboard({ 
-  stats, 
   statusAnalysis, 
   patientStats, 
   data, 
