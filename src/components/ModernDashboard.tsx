@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ChartContainer, 
@@ -19,6 +19,37 @@ import {
 } from 'recharts';
 import { CheckCircle, XCircle, TrendingDown, Calendar } from 'lucide-react';
 
+// Hook para animar números e barras de progresso sincronizados
+function useAnimatedValue(targetValue: number, duration: number = 2000) {
+  const [currentValue, setCurrentValue] = useState(0);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const startValue = 0;
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Função de easing (ease-out)
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      
+      const newValue = startValue + (targetValue - startValue) * easeOut;
+      setCurrentValue(newValue);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCurrentValue(targetValue);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [targetValue, duration]);
+
+  return currentValue;
+}
+
 interface ModernDashboardProps {
   statusAnalysis: StatusAnalysis;
   data: ExcelData[];
@@ -28,6 +59,13 @@ interface ModernDashboardProps {
 export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) {
   const totalAppointments = Object.values(statusAnalysis).reduce((sum, count) => sum + count, 0);
   const attendanceRate = totalAppointments > 0 ? ((statusAnalysis['Atendido'] || 0) / totalAppointments) * 100 : 0;
+  
+  // Valores animados
+  const animatedAttendanceRate = useAnimatedValue(attendanceRate, 2000);
+  const animatedAbsenceRate = useAnimatedValue(totalAppointments > 0 ? ((statusAnalysis['Falta'] || 0) / totalAppointments * 100) : 0, 2000);
+  const animatedCancellationRate = useAnimatedValue(totalAppointments > 0 ? ((statusAnalysis['Cancelado'] || 0) / totalAppointments * 100) : 0, 2000);
+  const animatedRescheduleRate = useAnimatedValue(totalAppointments > 0 ? ((statusAnalysis['Terapeuta desmarcou'] || 0) / totalAppointments * 100) : 0, 2000);
+  const animatedTotalAppointments = useAnimatedValue(totalAppointments, 2000);
 
   // Configuração dos charts do shadcn/ui - tons de azul
   const chartConfig = {
@@ -131,18 +169,18 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
     <div className="space-y-6">
       {/* Cards de Status Detalhados */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
+        <Card className="hover:shadow-lg hover:scale-105 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Presenças</CardTitle>
             <CheckCircle className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{attendanceRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-emerald-600">{animatedAttendanceRate.toFixed(1)}%</div>
             <div className="mt-2">
               <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-emerald-600 rounded-full transition-all duration-300" 
-                  style={{ width: `${attendanceRate}%` }}
+                  className="h-full bg-emerald-600 rounded-full" 
+                  style={{ width: `${animatedAttendanceRate}%` }}
                 />
               </div>
             </div>
@@ -152,18 +190,18 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg hover:scale-105 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faltas</CardTitle>
             <XCircle className="h-4 w-4 text-rose-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-600">{((statusAnalysis['Falta'] || 0) / totalAppointments * 100).toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-rose-600">{animatedAbsenceRate.toFixed(1)}%</div>
             <div className="mt-2">
               <div className="h-2 bg-rose-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-rose-600 rounded-full transition-all duration-300" 
-                  style={{ width: `${(statusAnalysis['Falta'] || 0) / totalAppointments * 100}%` }}
+                  className="h-full bg-rose-600 rounded-full" 
+                  style={{ width: `${animatedAbsenceRate}%` }}
                 />
               </div>
             </div>
@@ -173,18 +211,18 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg hover:scale-105 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cancelamentos</CardTitle>
             <TrendingDown className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{((statusAnalysis['Cancelado'] || 0) / totalAppointments * 100).toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-amber-600">{animatedCancellationRate.toFixed(1)}%</div>
             <div className="mt-2">
               <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-amber-600 rounded-full transition-all duration-300" 
-                  style={{ width: `${(statusAnalysis['Cancelado'] || 0) / totalAppointments * 100}%` }}
+                  className="h-full bg-amber-600 rounded-full" 
+                  style={{ width: `${animatedCancellationRate}%` }}
                 />
               </div>
             </div>
@@ -194,18 +232,18 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg hover:scale-105 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Remarcações</CardTitle>
             <Calendar className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-600">{((statusAnalysis['Terapeuta desmarcou'] || 0) / totalAppointments * 100).toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-indigo-600">{animatedRescheduleRate.toFixed(1)}%</div>
             <div className="mt-2">
               <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-indigo-600 rounded-full transition-all duration-300" 
-                  style={{ width: `${(statusAnalysis['Terapeuta desmarcou'] || 0) / totalAppointments * 100}%` }}
+                  className="h-full bg-indigo-600 rounded-full" 
+                  style={{ width: `${animatedRescheduleRate}%` }}
                 />
               </div>
             </div>
@@ -215,12 +253,12 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg hover:scale-105 transition-all duration-300">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-sm font-medium text-slate-700">Agendamentos</CardTitle>
           </CardHeader>
           <CardContent className="text-center pt-0">
-            <div className="text-4xl font-bold text-slate-800 mb-2">{totalAppointments}</div>
+            <div className="text-4xl font-bold text-slate-800 mb-2">{Math.round(animatedTotalAppointments)}</div>
             <div className="flex items-center justify-center gap-1 text-slate-600">
               <Calendar className="h-4 w-4" />
               <span className="text-sm font-medium">total</span>
@@ -230,7 +268,7 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
       </div>
 
       {/* Gráfico de Barras Empilhadas por Dia */}
-      <Card>
+      <Card className="hover:shadow-lg transition-all duration-300">
         <CardHeader>
           <CardTitle>Atendimentos por Dia</CardTitle>
           <CardDescription>
