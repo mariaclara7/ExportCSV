@@ -160,12 +160,13 @@ export function calculatePatientStats(data: ExcelData[]): PatientStats[] {
     
     const patient = patientStatsMap.get(patientName)!;
     
-    // Verificar se o status é válido para contagem (não incluir Confirmado, Confirmação pendente, Falta)
+    // Verificar se o status é válido para contagem (incluir Atendido, Cancelado, Terapeuta desmarcou e Falta)
     const lowerStatus = status.toLowerCase();
     const isValidStatus = lowerStatus.includes('atendido') || 
                         lowerStatus.includes('cancelado') || 
                         lowerStatus.includes('terapeuta desmarcou') ||
-                        lowerStatus.includes('desmarcado');
+                        lowerStatus.includes('desmarcado') ||
+                        lowerStatus.includes('falta');
     
     // Só contar no total se for um status válido
     if (isValidStatus) {
@@ -200,13 +201,14 @@ export function calculatePatientStats(data: ExcelData[]): PatientStats[] {
       return false;
     }
     
-    // Verificar se o paciente tem pelo menos um status válido (Atendido, Cancelado ou Desmarcado)
+    // Verificar se o paciente tem pelo menos um status válido (Atendido, Cancelado, Desmarcado ou Falta)
     const hasValidStatus = patient.statuses.some(status => {
       const lowerStatus = status.toLowerCase();
       return lowerStatus.includes('atendido') || 
              lowerStatus.includes('cancelado') || 
              lowerStatus.includes('terapeuta desmarcou') ||
-             lowerStatus.includes('desmarcado');
+             lowerStatus.includes('desmarcado') ||
+             lowerStatus.includes('falta');
     });
     
     return hasValidStatus;

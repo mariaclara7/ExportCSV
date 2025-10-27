@@ -86,35 +86,53 @@ export function Charts({ statusAnalysis, data }: ChartsProps) {
     const dailyCounts: { [key: string]: number } = {};
     
     data.forEach((row) => {
-      const inicioReal = row['Início real'] || '';
-      const fimReal = row['Fim real'] || '';
+      const inicioPrevisto = row['Início previsto'] || '';
+      const fimPrevisto = row['Fim previsto'] || '';
       const status = row['Status'] || row['status'] || row['STATUS'] || '';
       
-      const date = inicioReal || fimReal;
+      // Use "Início previsto" for all statuses, fallback to "Fim previsto"
+      const date = inicioPrevisto || fimPrevisto;
       
       if (date) {
-        let day = '';
+        let dayKey = '';
         if (date.includes('/')) {
-          day = date.split('/')[0]; // Formato DD/MM/YYYY
-        } else if (date.includes('-')) {
+          // Formato DD/MM/YYYY ou DD/MM/YYYY HH:MM
           const datePart = date.split(' ')[0];
-          day = datePart.split('-')[2];
+          const parts = datePart.split('/');
+          if (parts.length === 3) {
+            dayKey = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+          } else {
+            dayKey = datePart;
+          }
+        } else if (date.includes('-')) {
+          // Formato YYYY-MM-DD
+          const datePart = date.split(' ')[0];
+          const parts = datePart.split('-');
+          if (parts.length === 3) {
+            dayKey = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+          } else {
+            dayKey = datePart;
+          }
         } else {
-          day = date;
+          dayKey = date;
         }
         
-        if (day && !isNaN(parseInt(day))) {
-          if (!dailyCounts[day]) {
-            dailyCounts[day] = 0;
+        if (dayKey && dayKey.includes('/')) {
+          if (!dailyCounts[dayKey]) {
+            dailyCounts[dayKey] = 0;
           }
           if (status === 'Atendido') {
-            dailyCounts[day]++;
+            dailyCounts[dayKey]++;
           }
         }
       }
     });
 
-    const days = Object.keys(dailyCounts).sort((a, b) => parseInt(a) - parseInt(b));
+    const days = Object.keys(dailyCounts).sort((a, b) => {
+      const [dayA, monthA, yearA] = a.split('/').map(Number);
+      const [dayB, monthB, yearB] = b.split('/').map(Number);
+      return yearA - yearB || monthA - monthB || dayA - dayB;
+    });
     const attendanceCounts = days.map(day => dailyCounts[day]);
 
     return {

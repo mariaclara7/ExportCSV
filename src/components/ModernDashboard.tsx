@@ -56,8 +56,8 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
     // Processar dados para agrupar por dia
     data.forEach((row) => {
       const status = row['Status'] || row['status'] || row['STATUS'] || '';
-      const inicioReal = row['Início real'] || '';
       const inicioPrevisto = row['Início previsto'] || '';
+      const fimPrevisto = row['Fim previsto'] || '';
       
       if (status) {
         try {
@@ -66,43 +66,29 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
           // Normalize status for comparison
           const normalizedStatus = status.toLowerCase().trim();
           
-          // Choose the correct date column based on status
-          if (normalizedStatus === 'atendido' && inicioReal) {
-            // For "Atendido" status, use "Início real"
-            if (inicioReal.includes('/')) {
-              const datePart = inicioReal.split(' ')[0];
+          // Use "Início previsto" for all statuses, fallback to "Fim previsto"
+          const dateString = inicioPrevisto || fimPrevisto;
+          
+          if (dateString) {
+            if (dateString.includes('/')) {
+              const datePart = dateString.split(' ')[0];
               const parts = datePart.split('/');
               if (parts.length === 3) {
                 date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
               } else {
-                date = new Date(inicioReal);
+                date = new Date(dateString);
               }
-            } else if (inicioReal.includes('-')) {
-              const datePart = inicioReal.split(' ')[0];
+            } else if (dateString.includes('-')) {
+              const datePart = dateString.split(' ')[0];
               date = new Date(datePart);
             } else {
-              date = new Date(inicioReal);
-            }
-          } else if ((normalizedStatus === 'falta' || normalizedStatus === 'cancelado' || normalizedStatus === 'terapeuta desmarcou' || normalizedStatus === 'desmarcado') && inicioPrevisto) {
-            // For other statuses, use "Início previsto"
-            if (inicioPrevisto.includes('/')) {
-              const datePart = inicioPrevisto.split(' ')[0];
-              const parts = datePart.split('/');
-              if (parts.length === 3) {
-                date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-              } else {
-                date = new Date(inicioPrevisto);
-              }
-            } else if (inicioPrevisto.includes('-')) {
-              const datePart = inicioPrevisto.split(' ')[0];
-              date = new Date(datePart);
-            } else {
-              date = new Date(inicioPrevisto);
+              date = new Date(dateString);
             }
           }
           
           if (date && !isNaN(date.getTime())) {
-            const dayKey = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            // Usar UTC para evitar problemas de timezone
+            const dayKey = `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
             
             if (!dailyCounts[dayKey]) {
               dailyCounts[dayKey] = { atendidos: 0, faltas: 0, cancelados: 0, desmarcados: 0 };
@@ -119,16 +105,16 @@ export function ModernDashboard({ statusAnalysis, data }: ModernDashboardProps) 
             }
           }
         } catch (error) {
-          console.warn('Error processing date:', { inicioReal, inicioPrevisto, status }, error);
+          console.warn('Error processing date:', { inicioPrevisto, fimPrevisto, status }, error);
         }
       }
     });
 
     return Object.entries(dailyCounts)
       .sort(([a], [b]) => {
-        const [dayA, monthA] = a.split('/').map(Number);
-        const [dayB, monthB] = b.split('/').map(Number);
-        return monthA - monthB || dayA - dayB;
+        const [dayA, monthA, yearA] = a.split('/').map(Number);
+        const [dayB, monthB, yearB] = b.split('/').map(Number);
+        return yearA - yearB || monthA - monthB || dayA - dayB;
       })
       .map(([day, counts]) => ({
         day,

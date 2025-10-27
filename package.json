@@ -2,6 +2,7 @@
   "name": "export-csv",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://mariaclara7.github.io/ExportCSV/",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +10,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist --no-history"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
