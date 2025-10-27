@@ -19,16 +19,8 @@ function App() {
   const hasData = data.length > 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
       <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            📊 Dashboard Excel/CSV - Análise de Status
-          </h1>
-          <p className="text-xl text-gray-600">
-            Faça upload de um arquivo Excel ou CSV para visualizar análises baseadas nos status dos dados
-          </p>
-        </header>
 
         {error && (
           <Alert className="mb-6 border-red-200 bg-red-50">
