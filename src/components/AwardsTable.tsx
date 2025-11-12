@@ -24,9 +24,9 @@ export function AwardsTable({ patientStats }: AwardsTableProps) {
 
   // Calcular porcentagem de presença para cada paciente
   const patientsWithAttendance = eligiblePatients.map(patient => {
-    // Taxa de presença = (Atendidas / (Atendidas + Faltas)) * 100
-    // Cancelados e Desmarcados não contam como falta
-    const totalRelevantAppointments = patient.atendidoCount + patient.absences;
+    // Taxa de presença = (Atendidas / (Atendidas + Faltas + Cancelados)) * 100
+    // Desmarcados não contam como falta
+    const totalRelevantAppointments = patient.atendidoCount + patient.absences + patient.canceladoCount;
     const attendanceRate = totalRelevantAppointments > 0 ? 
       (patient.atendidoCount / totalRelevantAppointments * 100) : 0;
     
