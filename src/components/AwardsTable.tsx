@@ -3,9 +3,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { PatientStats } from '@/types';
 import { formatDate } from '@/lib/utils';
-import { Users, TrendingUp, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, TrendingUp, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { useState } from 'react';
 
 interface AwardsTableProps {
@@ -18,6 +19,8 @@ export function AwardsTable({ patientStats }: AwardsTableProps) {
   const [percentageFilter, setPercentageFilter] = useState<'all' | '100' | '100-90' | '90-80' | 'below-80'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isDrawOpen, setIsDrawOpen] = useState(false);
+  const [drawResult, setDrawResult] = useState<{ name: string; attendanceRate: number; totalParticipants: number } | null>(null);
 
   // Filtrar pacientes que têm pelo menos uma sessão atendida
   const eligiblePatients = patientStats.filter(patient => patient.hasAtLeastOneAttended);
@@ -82,6 +85,31 @@ export function AwardsTable({ patientStats }: AwardsTableProps) {
     setCurrentPage(1);
   };
 
+  // Função para realizar o sorteio
+  const performDraw = () => {
+    // Filtrar apenas pacientes com Taxa de Presença = 100%
+    // Usar tolerância de 0.01 para lidar com problemas de precisão de ponto flutuante
+    const perfectAttendancePatients = patientsWithAttendance.filter(
+      patient => Math.abs(patient.attendanceRate - 100) < 0.01
+    );
+
+    if (perfectAttendancePatients.length === 0) {
+      alert('Não há pacientes com Taxa de Presença de 100% para realizar o sorteio.');
+      return;
+    }
+
+    // Realizar sorteio aleatório
+    const randomIndex = Math.floor(Math.random() * perfectAttendancePatients.length);
+    const winner = perfectAttendancePatients[randomIndex];
+
+    setDrawResult({
+      name: winner.name,
+      attendanceRate: winner.attendanceRate,
+      totalParticipants: perfectAttendancePatients.length
+    });
+    setIsDrawOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -91,6 +119,13 @@ export function AwardsTable({ patientStats }: AwardsTableProps) {
             Análise de Pacientes
           </CardTitle>
           <div className="flex items-center gap-3">
+            <Button
+              onClick={performDraw}
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
+            >
+              <Gift className="h-4 w-4" />
+              Realizar Sorteio
+            </Button>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <Select value={sortBy} onValueChange={(value: 'attendance' | 'attendance-low') => {
@@ -302,6 +337,52 @@ export function AwardsTable({ patientStats }: AwardsTableProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Modal de Resultado do Sorteio */}
+      <Dialog open={isDrawOpen} onOpenChange={setIsDrawOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+              <Gift className="h-6 w-6 text-purple-600" />
+              Resultado do Sorteio
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Sorteio realizado entre pacientes com Taxa de Presença de 100%
+            </DialogDescription>
+          </DialogHeader>
+          {drawResult && (
+            <div className="pb-6">
+              <div className="text-center space-y-4">
+                {/* Informação sobre participantes */}
+                <div className="mb-6 pb-4 border-b">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Users className="h-5 w-5" />
+                    <span className="text-base font-medium">
+                      {drawResult.totalParticipants} {drawResult.totalParticipants === 1 ? 'pessoa participou' : 'pessoas participaram'} do sorteio
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Resultado do sorteio */}
+                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                  {drawResult.name}
+                </div>
+                <div className="pt-4">
+                  <div className="text-6xl">🎉</div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button 
+              onClick={() => setIsDrawOpen(false)}
+              className="w-full"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
